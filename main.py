@@ -22,11 +22,21 @@ def useMic():
 
     out = sr.recognize_once_async().get()
 
+    message = ''
     if out.reason == speechsdk.ResultReason.RecognizedSpeech:
         text = out.text
-        print('Message : {}'.format(text))
+        message = 'Message : {}'.format(text)
+    elif out.reason == speechsdk.ResultReason.NoMatch:
+        message = "NoMatch. Speech could not be recognized. Reason {}".format(out.no_match_details)
+    elif out.reason == speechsdk.ResultReason.Canceled:
+        cancellation_details = out.cancellation_details
+        mesage = "Speech Recognition has been canceled. Reason {}".format(cancellation_details.reason)
+        if cancellation_details.reason == speechsdk.CancellationReason.Error:
+            mesage += "Error message: {}".format(cancellation_details.error_details)
     else:
-        print('It failed . Try again')
+        message = 'An unexpected error happened. Try again'
 
-useMic
+    print(message)
+
+useMic()
 
