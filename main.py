@@ -1,12 +1,15 @@
 import os
+import time
+from turtle import done
 import azure.cognitiveservices.speech as speechsdk
 
 subscription='aa28914fa17a430f9b65fad0bdc2e500'
 region =  'eastus'
 
+
 def get_speech_config():
     speech_config = speechsdk.SpeechConfig(subscription=subscription, region=region)
-    speech_config.speech_recognition_language="en-US"
+    speech_config.speech_recognition_language="fr-FR"
     return speech_config
 
 def get_speech_recognizer(speech_config):
@@ -38,5 +41,31 @@ def useMic():
 
     print(message)
 
-useMic()
+speech_recognizer = get_speech_recognizer(get_speech_config())
+done = False
 
+def continousSpeechRecognition():
+    done = False
+
+def closeMic(evt):
+    message = 'Stoping speech recognition by closing mic on {}'.format(evt)
+
+    speech_recognizer.stop_continuous_recognition()
+    done = True
+
+    print(message)
+
+def init_speech_event():
+    speech_recognizer.recognizing.connect(lambda evt: print('RECOGNIZING: {}'.format(evt)))
+    speech_recognizer.recognized.connect(lambda evt: print('RECOGNIZED: {}'.format(evt)))
+    speech_recognizer.session_started.connect(lambda evt: print('SESSION STARTED: {}'.format(evt)))
+    speech_recognizer.session_stopped.connect(lambda evt: print('SESSION STOPPED {}'.format(evt)))
+    speech_recognizer.canceled.connect(lambda evt: print('CANCELED {}'.format(evt)))
+
+    speech_recognizer.session_stopped.connect(closeMic)
+    speech_recognizer.canceled.connect(closeMic)
+
+init_speech_event()
+speech_recognizer.start_continuous_recognition()
+while not done:
+    time.sleep(60)
