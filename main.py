@@ -9,7 +9,7 @@ region =  'eastus'
 
 def get_speech_config():
     speech_config = speechsdk.SpeechConfig(subscription=subscription, region=region)
-    speech_config.speech_recognition_language="fr-FR"
+    speech_config.speech_recognition_language="en-US"
     return speech_config
 
 def get_speech_recognizer(speech_config):
@@ -53,11 +53,33 @@ def closeMic(evt):
     speech_recognizer.stop_continuous_recognition()
     done = True
 
+    if evt.result.reason == speechsdk.ResultReason.Canceled:
+        cancellation_details = evt.result.cancellation_details
+        mesage = "Speech Recognition has been canceled. Reason {}".format(cancellation_details.reason)
+        if cancellation_details.reason == speechsdk.CancellationReason.Error:
+            mesage += "Error message: {}".format(cancellation_details.error_details)
+
     print(message)
 
+def getRecognizedText(evt):
+    #print('RECOGNIZED: {}'.format(evt))
+    text = evt.result.text
+    print(text)
+    if text.find('kill') != -1 or text.find('exit') != -1:
+        print('received stop')
+        speech_recognizer.stop_continuous_recognition()
+        done = True
+
+def default_init_speech_event():
+    speech_recognizer.session_started.connect(lambda evt: print('SESSION STARTED: {}'.format(evt)))
+    speech_recognizer.recognized.connect(getRecognizedText)
+    speech_recognizer.session_stopped.connect(closeMic)
+    speech_recognizer.canceled.connect(closeMic)
+    
+
 def init_speech_event():
-    speech_recognizer.recognizing.connect(lambda evt: print('RECOGNIZING: {}'.format(evt)))
-    speech_recognizer.recognized.connect(lambda evt: print('RECOGNIZED: {}'.format(evt)))
+    #speech_recognizer.recognizing.connect(lambda evt: print('RECOGNIZING: {}'.format(evt)))
+    speech_recognizer.recognized.connect(getRecognizedText)
     speech_recognizer.session_started.connect(lambda evt: print('SESSION STARTED: {}'.format(evt)))
     speech_recognizer.session_stopped.connect(lambda evt: print('SESSION STOPPED {}'.format(evt)))
     speech_recognizer.canceled.connect(lambda evt: print('CANCELED {}'.format(evt)))
@@ -65,7 +87,10 @@ def init_speech_event():
     speech_recognizer.session_stopped.connect(closeMic)
     speech_recognizer.canceled.connect(closeMic)
 
+#default_init_speech_event()
 init_speech_event()
 speech_recognizer.start_continuous_recognition()
 while not done:
-    time.sleep(60)
+    time.sleep(120)
+
+print("done is True")
